@@ -39,15 +39,33 @@ import random
 
 class MiAgente(Agente):
     def __init__(self):
-        super().__init__(nombre="Explorador Básico")
+        super().__init__(nombre="Explorador de Utilidad v1")
 
     def decidir(self, percepcion):
-        # Acción base para el commit inicial
-        if percepcion['abajo'] == 'libre':
-            return 'abajo'
-        elif percepcion['derecha'] == 'libre':
-            return 'derecha'
-        
-        # Movimiento aleatorio por defecto
-        acciones_posibles = [a for a in self.ACCIONES if percepcion.get(a) == 'libre']
-        return random.choice(acciones_posibles) if acciones_posibles else 'abajo'
+        direcciones_meta = percepcion['direccion_meta']
+        mejores_acciones = []
+        max_utilidad = float('-inf')
+
+        for accion in self.ACCIONES:
+            estado_celda = percepcion[accion]
+            
+            if estado_celda is None or estado_celda == 'pared':
+                continue
+
+            if estado_celda == 'meta':
+                return accion
+
+            # FUNCIÓN DE UTILIDAD BÁSICA
+            utilidad = 0
+            if accion in direcciones_meta:
+                utilidad += 50  # Premio por ir en la dirección correcta
+
+            if utilidad > max_utilidad:
+                max_utilidad = utilidad
+                mejores_acciones = [accion]
+            elif utilidad == max_utilidad:
+                mejores_acciones.append(accion)
+
+        return random.choice(mejores_acciones) if mejores_acciones else 'abajo'
+
+
