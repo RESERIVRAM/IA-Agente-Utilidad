@@ -37,49 +37,72 @@ fuera del mapa), simplemente se queda en su lugar.
 from entorno import Agente
 
 class MiAgente(Agente):
+    """
+    Agente basado en utilidad para navegación en mapa con paredes.
+    """
+
     def __init__(self):
-        super().__init__(nombre="Explorador de Utilidad v2")
+        super().__init__(nombre="Explorador de Utilidad")
+        # Memoria para contar cuántas veces hemos pasado por cada celda
         self.historial_visitas = {}
 
     def al_iniciar(self):
+        """Reinicia la memoria al empezar una nueva simulación."""
         self.historial_visitas = {}
 
+    def decidir(self, percepcion):
+        """
+        Decide el movimiento evaluando la UTILIDAD de cada opción.
+        La utilidad considera la distancia a la meta y el número de pasos (penalizando retrocesos).
+        """
+        pos_actual = percepcion['posicion']
+        # Registramos la visita a la posición actual
+        self.historial_visitas[pos_actual] = self.historial_visitas.get(pos_actual, 0) + 1
+        
+        direcciones_meta = percepcion['direccion_meta']
+        mejores_acciones = []
+        max_utilidad = float('-inf')
+
+        for accion in self.ACCIONES:
+            estado_celda = percepcion[accion]
+            
+            # 1. Ignorar movimientos imposibles
+            if estado_celda is None or estado_celda == 'pared':
+                continue
+
+            # 2. Prioridad máxima: La Meta
+            if estado_celda == 'meta':
+                return accion
+
+            # 3. Calcular Utilidad
+            futura_pos = self._predecir_posicion(pos_actual, accion)
+            num_visitas = self.historial_visitas.get(futura_pos, 0)
+
+            # --- MEDIDA DE UTILIDAD (Número de pasos) ---
+            utilidad = 100 
+            
+            # Bono: Acercarnos geográficamente a la meta
+            if accion in direcciones_meta:
+                utilidad += 50
+            
+            # Costo: Penalización por pasos (visitas). 
+            # Minimiza el número de pasos totales al priorizar caminos inexplorados
+            utilidad -= (num_visitas * 30)
+            # ---------------------------
+
+            if utilidad > max_utilidad:
+                max_utilidad = utilidad
+                mejores_acciones = [accion]
+            elif utilidad == max_utilidad:
+                mejores_acciones.append(accion)
+
+        return mejores_acciones[0] if mejores_acciones else 'abajo'
+
     def _predecir_posicion(self, pos, accion):
+        """Calcula la coordenada resultante de un movimiento."""
         f, c = pos
         if accion == 'arriba': return (f - 1, c)
         if accion == 'abajo': return (f + 1, c)
         if accion == 'izquierda': return (f, c - 1)
         if accion == 'derecha': return (f, c + 1)
         return pos
-
-    def decidir(self, percepcion):
-        pos_actual = percepcion['posicion']
-        self.historial_visitas[pos_actual] = self.historial_visitas.get(pos_actual, 0) + 1
-        
-        direcciones_meta = percepcion['direccion_meta']
-        mejor_accion = 'abajo'
-        max_utilidad = float('-inf')
-
-        for accion in self.ACCIONES:
-            estado_celda = percepcion[accion]
-            if estado_celda is None or estado_celda == 'pared':
-                continue
-            if estado_celda == 'meta':
-                return accion
-
-            futura_pos = self._predecir_posicion(pos_actual, accion)
-            num_visitas = self.historial_visitas.get(futura_pos, 0)
-
-            # FUNCIÓN DE UTILIDAD: Premio por dirección, Penalización por pasos/visitas
-            utilidad = 100 
-            if accion in direcciones_meta:
-                utilidad += 50
-            utilidad -= (num_visitas * 30) # Penaliza revisitar celdas para minimizar pasos totales
-
-            if utilidad > max_utilidad:
-                max_utilidad = utilidad
-                mejor_accion = accion
-
-        return mejor_accion
-
-
