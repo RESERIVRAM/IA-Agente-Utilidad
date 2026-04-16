@@ -35,58 +35,19 @@ fuera del mapa), simplemente se queda en su lugar.
 """
 
 from entorno import Agente
-
+import random
 
 class MiAgente(Agente):
-    """
-    Tu agente de navegación.
-
-    Implementa el método decidir() para que el agente
-    llegue del punto A al punto B en el grid.
-    """
-
     def __init__(self):
-        super().__init__(nombre="Mi Agente")
-        # Puedes agregar atributos aquí si los necesitas.
-        # Ejemplo:
-        #   self.pasos = 0
-        #   self.memoria = {}
-
-    def al_iniciar(self):
-        """Se llama una vez al iniciar la simulación. Opcional."""
-        pass
+        super().__init__(nombre="Explorador Básico")
 
     def decidir(self, percepcion):
+        # Acción base para el commit inicial
+        if percepcion['abajo'] == 'libre':
+            return 'abajo'
+        elif percepcion['derecha'] == 'libre':
+            return 'derecha'
         
-        """
-        Decide la siguiente acción del agente.
-        
-        Parámetros:
-            percepcion – diccionario con lo que el agente puede ver
-
-        Retorna:
-            'arriba', 'abajo', 'izquierda' o 'derecha'
-        """
-        # ╔══════════════════════════════════════╗
-        # ║   ESCRIBE TU LÓGICA AQUÍ             ║
-        # ╚══════════════════════════════════════╝
-
-        # Ejemplo básico (bórralo y escribe tu propia lógica):
-        #
-        # vert, horiz = percepcion['direccion_meta']
-        #
-        # if percepcion[vert] == 'libre' or percepcion[vert] == 'meta':
-        #     return vert
-        # if percepcion[horiz] == 'libre' or percepcion[horiz] == 'meta':
-        #     return horiz
-        #
-        # return 'abajo'
-        print('Hola decidir')
-        for direccion in self.ACCIONES:
-            celda = percepcion[direccion]
-            if celda == 'meta':
-                return direccion
-            if celda == 'libre':
-                return direccion
-
-        return 'abajo'  # ← Reemplazar con tu lógica
+        # Movimiento aleatorio por defecto
+        acciones_posibles = [a for a in self.ACCIONES if percepcion.get(a) == 'libre']
+        return random.choice(acciones_posibles) if acciones_posibles else 'abajo'
